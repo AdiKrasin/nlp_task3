@@ -1,12 +1,13 @@
 import nltk
 
 sg = """
-S -> NP VP
+S -> NP VP | S NP | S PREP NP
 VP -> IV | TV NP
 NP -> SNNom SN | PNNom PN | SNDet SN | PNDet PN | 'John' | 'bread' | 'Mary' | 'They' | 'her' | 'She' | 'them' | 'Everybody' | 'it' | 'butter'
 SNNom -> SNDet Adj
 PNNom -> PNDet Adj
 Adj -> 'heavy'
+PREP -> 'to'
 SNDet -> 'A' | 'The' | 'a'
 PNDet -> 'many' | 'The' | 'Some'
 SN -> 'boy' | 'chair' | 'book'
@@ -15,7 +16,6 @@ IV -> 'left'
 TV -> 'eats' | 'loves' | 'love' | 'gave' | 'likes' | 'moves'
 """
 
-# todo still didn't figure out where to put 'heavy' and 'to'
 g = nltk.CFG.fromstring(sg)
 
 # Bottom-up  parser
@@ -45,10 +45,10 @@ parse_sentence("Everybody loves John")
 parse_sentence("A boy loves Mary")
 parse_sentence("The boy loves Mary")
 parse_sentence("Some boys love Mary")
-'''
 parse_sentence("John gave Mary a heavy book")
 '''
-#parse_sentence("John gave it to Mary")
+parse_sentence("John gave it to Mary")
+'''
 parse_sentence("John likes butter")
 parse_sentence("John moves a chair")
 '''
