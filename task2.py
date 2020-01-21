@@ -35,11 +35,10 @@ def pcfg_generate(grammar):
             try:
                 t = non_terminal_into_terminal(genereted_nts[index])
             except Exception as e:
-                ans_genereted_nts = genereted_nts
                 continue
-            ans_genereted_nts = genereted_nts[:index] + ((old_nt, t),) + genereted_nts[index+1:]
-            ans_genereted_nts = ans_genereted_nts[:index] + ((old_nt, nts_into_ts(t)),) + ans_genereted_nts[index+1:]
-        return ans_genereted_nts
+            genereted_nts = genereted_nts[:index] + ((old_nt, t),) + genereted_nts[index+1:]
+            genereted_nts = genereted_nts[:index] + ((old_nt, nts_into_ts(t)),) + genereted_nts[index+1:]
+        return genereted_nts
 
     productions = grammar.productions()
     dic = dict()
