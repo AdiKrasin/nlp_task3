@@ -29,6 +29,7 @@ def pcfg_generate(grammar):
         return genereted
 
     # todo it does not work right recursivly when i move to the next nt i remove the old one somehow
+    # todo check if i fixed it
     def nts_into_ts(genereted_nts):
         for index in range(len(genereted_nts)):
             old_nt = genereted_nts[index]
