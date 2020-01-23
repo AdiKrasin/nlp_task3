@@ -2,7 +2,7 @@ from nltk.grammar import Nonterminal
 from nltk.grammar import toy_pcfg2
 from nltk.probability import DictionaryProbDist
 from nltk.tree import Tree
-
+import os
 
 
 '''
@@ -48,5 +48,13 @@ def pcfg_generate(grammar):
     return nts_into_ts(genereted)
 
 
+file_content = ""
 for i in range(1000):
-    print(pcfg_generate(toy_pcfg2))
+    res_tree = pcfg_generate(toy_pcfg2)
+    file_content += str(res_tree) + "\n"
+
+if os.path.exists(".\\toy_pcfg2.gen"):
+    os.remove(".\\toy_pcfg2.gen")
+else:
+    with open(".\\toy_pcfg2.gen", "w+") as f:
+        f.write(file_content)
