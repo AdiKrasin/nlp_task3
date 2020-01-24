@@ -3,9 +3,11 @@ from nltk.grammar import toy_pcfg2
 from nltk.probability import DictionaryProbDist
 from nltk.tree import Tree
 import os
-from nltk.grammar import ProbabilisticProduction, PCFG
+from nltk.grammar import induce_pcfg, ProbabilisticProduction
 
-'''
+productions_corpus = list()
+
+
 def pcfg_generate(grammar):
 
     def non_terminal_into_terminal(non_terminal):
@@ -23,6 +25,7 @@ def pcfg_generate(grammar):
                 t = non_terminal_into_terminal(genereted_nts[index])
             except Exception as e:
                 continue
+            productions_corpus.append(ProbabilisticProduction(Nonterminal(old_nt), tuple(t), **{'prob': 0}))
             genereted_nts[index] = nts_into_ts(Tree(old_nt, t))
         return genereted_nts
 
@@ -31,59 +34,40 @@ def pcfg_generate(grammar):
     for pr in productions: dic[pr.rhs()] = pr.prob()
     productions_probDist = DictionaryProbDist(dic)
     genereted = productions_probDist.generate()
+    productions_corpus.append(ProbabilisticProduction(Nonterminal('S'), genereted, **{'prob': 0}))
     genereted = Tree('S', [genereted[0], genereted[1]])
     return nts_into_ts(genereted)
 
 
+corpus = list()
 file_content = ""
 for i in range(1000):
     res_tree = pcfg_generate(toy_pcfg2)
     file_content += str(res_tree) + "\n"
+    corpus.append(res_tree)
 
 if os.path.exists(".\\toy_pcfg2.gen"):
     os.remove(".\\toy_pcfg2.gen")
 else:
     with open(".\\toy_pcfg2.gen", "w+") as f:
         f.write(file_content)
-'''
 
 
-def induce_pcfg(start, productions):
-    """
-    Induce a PCFG grammar from a list of productions.
+# this is the probability distribution for toy_pcfg2.
+productions_toy_pcfg2 = toy_pcfg2.productions()
+fd_toy_pcfg2 = induce_pcfg(productions_toy_pcfg2[0].lhs(), productions_toy_pcfg2)
 
-    The probability of a production A -> B C in a PCFG is:
+# todo here i will check the actual probabilities before i turn into list(set(list))) and then turn into it with the
+#  right probability
+original_production_corpus = productions_corpus
+productions_corpus = list(set(productions_corpus))
+# for prod in original_production_corpus:
 
-    |                count(A -> B C)
-    |  P(B, C | A) = ---------------       where \* is any right hand side
-    |                 count(A -> \*)
+# todo delete these lines:
+print(productions_corpus)
+print(productions_toy_pcfg2)
+exit(0)
 
-    :param start: The start symbol
-    :type start: Nonterminal
-    :param productions: The list of productions that defines the grammar
-    :type productions: list(Production)
-    """
-    # Production count: the number of times a given production occurs
-    pcount = {}
-
-    # LHS-count: counts the number of times a given lhs occurs
-    lcount = {}
-
-    for prod in productions:
-        lcount[prod.lhs()] = lcount.get(prod.lhs(), 0) + 1
-        pcount[prod] = pcount.get(prod, 0) + 1
-
-    prods = [
-        ProbabilisticProduction(p.lhs(), p.rhs(), prob=pcount[p] / lcount[p.lhs()])
-        for p in pcount
-    ]
-    return PCFG(start, prods)
-
-
-lst_of_nts = list()
-productions = toy_pcfg2.productions()
-for production in productions:
-    lst_of_nts.append(production.lhs())
-for nt in lst_of_nts:
-    fd = induce_pcfg(nt, productions)
-    print(fd)
+# this is the probability distribution for my corpus
+fd_corpus = induce_pcfg(productions_corpus[0].lhs(), productions_corpus)
+print(fd_corpus)
