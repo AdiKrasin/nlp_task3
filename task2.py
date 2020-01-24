@@ -1,9 +1,10 @@
 from nltk.grammar import Nonterminal
 from nltk.grammar import toy_pcfg2
-from nltk.probability import DictionaryProbDist
+from nltk.probability import DictionaryProbDist, MLEProbDist, FreqDist
 from nltk.tree import Tree
 import os
-from nltk.grammar import induce_pcfg, ProbabilisticProduction, PCFG
+from nltk.grammar import ProbabilisticProduction
+import math
 
 productions_corpus = list()
 
@@ -53,10 +54,6 @@ else:
         f.write(file_content)
 
 
-# this is the probability distribution for toy_pcfg2.
-productions_toy_pcfg2 = toy_pcfg2.productions()
-fd_toy_pcfg2 = induce_pcfg(Nonterminal('S'), productions_toy_pcfg2)
-
 original_production_corpus = productions_corpus
 productions_corpus = list(set(productions_corpus))
 probabilities = dict()
@@ -81,14 +78,37 @@ for index in range(len(productions_corpus)):
     prod = productions_corpus[index]
     productions_corpus[index] = ProbabilisticProduction(prod.lhs(), prod.rhs(), **{'prob': probabilities[str(prod)]})
 
+productions_toy_pcfg2 = toy_pcfg2.productions()
 
-def induce_pcfg2(start, productions):
+lhs_of_prods = set([str(prod.lhs()) for prod in original_production_corpus] + [str(prod.lhs()) for prod in
+                                                                               productions_toy_pcfg2])
+
+
+def compute_kl_divergence(mle_dist1, mle_dist2):
+    ans = 0
+    for p in mle_dist1.freqdist():
+        for q in mle_dist2.freqdist():
+            if p.rhs() == q.rhs():
+                ans += p.prob() * math.log(p.prob() / q.prob())
+    return ans
+
+
+for lhs in lhs_of_prods:
     prods = [
-        ProbabilisticProduction(prod.lhs(), prod.rhs(), prob=prod.prob())
-        for prod in productions
+        ProbabilisticProduction(prod.lhs(), prod.rhs(), prob=prod.prob()) for prod in productions_corpus if
+        str(prod.lhs()) == lhs
     ]
-    return PCFG(start, prods)
-
-
-# this is the probability distribution for my corpus
-fd_corpus = induce_pcfg2(Nonterminal('S'), productions_corpus)
+    prods_for_toy_pcfg2 = [
+        ProbabilisticProduction(prod.lhs(), prod.rhs(), prob=prod.prob()) for prod in productions_toy_pcfg2 if
+        str(prod.lhs()) == lhs
+    ]
+    if len(prods):
+        MLE_prob_dist = MLEProbDist(FreqDist(prods))
+    if len(prods_for_toy_pcfg2):
+        MLE_prob_dist_for_toy_pcfg2 = MLEProbDist(FreqDist(prods_for_toy_pcfg2))
+    if not(len(prods) and len(prods_for_toy_pcfg2)):
+        print('skipping {} because this nt does not appear in both cases'.format(lhs))
+    else:
+        print('this is the KL-Divergence {} for this lhs {}'.format(compute_kl_divergence(MLE_prob_dist,
+                                                                                          MLE_prob_dist_for_toy_pcfg2),
+                                                                    lhs))
