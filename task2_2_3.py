@@ -77,11 +77,11 @@ def pcfg_learn(treebank, n):
     productions = list()
     for i in range(n):
         for tree in treebank.parsed_sents()[:i+1]:
-            chomsky_normal_form(tree, factor='right', horzMarkov=1, vertMarkov=1, childChar='|', parentChar='^')
+            # this is just for 2.3
+            # chomsky_normal_form(tree, factor='right', horzMarkov=1, vertMarkov=1, childChar='|', parentChar='^')
             productions.append(next(tree_to_productions(tree)))
     productions = get_productions(productions)
     return PCFG(Nonterminal('S'), productions)
 
 
 print(pcfg_learn(treebank, 200))
-
