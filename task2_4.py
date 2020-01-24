@@ -71,7 +71,6 @@ def pcfg_learn(treebank, n):
     productions = list()
     for i in range(n):
         for tree in treebank.parsed_sents()[:i+1]:
-            chomsky_normal_form(tree, factor='right', horzMarkov=1, vertMarkov=1, childChar='|', parentChar='^')
             prod_gen = tree_to_productions(tree)
             tree_to_append = next(prod_gen)
             while tree_to_append:
@@ -85,4 +84,3 @@ def pcfg_learn(treebank, n):
 
 
 print(pcfg_learn(treebank, 200))
-#print(pcfg_learn(treebank, 400))
