@@ -55,19 +55,32 @@ else:
 
 # this is the probability distribution for toy_pcfg2.
 productions_toy_pcfg2 = toy_pcfg2.productions()
-fd_toy_pcfg2 = induce_pcfg(productions_toy_pcfg2[0].lhs(), productions_toy_pcfg2)
+fd_toy_pcfg2 = induce_pcfg(Nonterminal('S'), productions_toy_pcfg2)
 
-# todo here i will check the actual probabilities before i turn into list(set(list))) and then turn into it with the
-#  right probability
 original_production_corpus = productions_corpus
 productions_corpus = list(set(productions_corpus))
-# for prod in original_production_corpus:
+probabilities = dict()
+for prod in original_production_corpus:
+    if str(prod) in probabilities:
+        probabilities[str(prod)] += 1
+    else:
+        probabilities[str(prod)] = 1
 
-# todo delete these lines:
-print(productions_corpus)
-print(productions_toy_pcfg2)
-exit(0)
+lhs_of_prods = set([prod.lhs() for prod in original_production_corpus])
+
+for lhs in lhs_of_prods:
+    number_of_occurrences = 0
+    for prob in probabilities:
+        if prob.startswith(str(lhs) + " "):
+            number_of_occurrences += probabilities[prob]
+    for prob in probabilities:
+        if prob.startswith(str(lhs) + " "):
+            probabilities[prob] = probabilities[prob] / number_of_occurrences
+
+for index in range(len(productions_corpus)):
+    prod = productions_corpus[index]
+    productions_corpus[index] = ProbabilisticProduction(prod.lhs(), prod.rhs(), **{'prob': probabilities[str(prod)]})
+
 
 # this is the probability distribution for my corpus
-fd_corpus = induce_pcfg(productions_corpus[0].lhs(), productions_corpus)
-print(fd_corpus)
+fd_corpus = induce_pcfg(Nonterminal('S'), productions_corpus)
