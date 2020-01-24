@@ -42,14 +42,45 @@ print(treebank.parsed_sents()[0])
 '''
 
 
+def get_productions(productions):
+
+    probabilities = dict()
+    productions_to_return = list(set(productions))
+
+    for prod in productions:
+        if str(prod) in probabilities:
+            probabilities[str(prod)] += 1
+        else:
+            probabilities[str(prod)] = 1
+
+    lhs_of_prods = set([prod.lhs() for prod in productions])
+
+    for lhs in lhs_of_prods:
+        number_of_occurrences = 0
+        for prob in probabilities:
+            if prob.startswith(str(lhs) + " "):
+                number_of_occurrences += probabilities[prob]
+        for prob in probabilities:
+            if prob.startswith(str(lhs) + " "):
+                probabilities[prob] = probabilities[prob] / number_of_occurrences
+
+    for index in range(len(productions_to_return)):
+        prod = productions_to_return[index]
+        productions_to_return[index] = ProbabilisticProduction(prod.lhs(), prod.rhs(),
+                                                               **{'prob': probabilities[str(prod)]})
+
+    return productions_to_return
+
+
 def pcfg_learn(treebank, n):
     productions = list()
     for i in range(n):
         for tree in treebank.parsed_sents()[:i+1]:
             productions.append(next(tree_to_productions(tree)))
-    # todo need to calculate the probabilities and change them from 0 to actual value - same as in task 2.1
+    productions = get_productions(productions)
     return PCFG(Nonterminal('S'), productions)
 
 
 print(pcfg_learn(treebank, 200))
+print(pcfg_learn(treebank, 400))
 
