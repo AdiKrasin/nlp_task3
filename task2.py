@@ -3,7 +3,7 @@ from nltk.grammar import toy_pcfg2
 from nltk.probability import DictionaryProbDist
 from nltk.tree import Tree
 import os
-from nltk.grammar import induce_pcfg, ProbabilisticProduction
+from nltk.grammar import induce_pcfg, ProbabilisticProduction, PCFG
 
 productions_corpus = list()
 
@@ -82,5 +82,13 @@ for index in range(len(productions_corpus)):
     productions_corpus[index] = ProbabilisticProduction(prod.lhs(), prod.rhs(), **{'prob': probabilities[str(prod)]})
 
 
+def induce_pcfg2(start, productions):
+    prods = [
+        ProbabilisticProduction(prod.lhs(), prod.rhs(), prob=prod.prob())
+        for prod in productions
+    ]
+    return PCFG(start, prods)
+
+
 # this is the probability distribution for my corpus
-fd_corpus = induce_pcfg(Nonterminal('S'), productions_corpus)
+fd_corpus = induce_pcfg2(Nonterminal('S'), productions_corpus)
