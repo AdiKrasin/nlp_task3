@@ -2,7 +2,8 @@ from nltk.corpus import LazyCorpusLoader, BracketParseCorpusReader
 from nltk import PCFG
 from nltk.grammar import ProbabilisticProduction
 from nltk import Tree, Nonterminal
-from nltk.probability import FreqDist
+from nltk.probability import FreqDist, MLEProbDist
+import math
 
 
 def simplify_functional_tag(tag):
@@ -22,11 +23,11 @@ def tree_to_production(tree):
     return ProbabilisticProduction(get_tag(tree), [get_tag(child) for child in tree], **{'prob': 0})
 
 
-def tree_to_productions(tree):
-    yield tree_to_production(tree)
+def tree_to_productions(tree, father_title):
+    yield tree_to_production(tree), father_title
     for child in tree:
         if isinstance(child, Tree):
-            for prod in tree_to_productions(child):
+            for prod in tree_to_productions(child, tree.label()):
                 yield prod
 
 
@@ -59,68 +60,81 @@ def get_productions(productions):
         prod = productions_to_return[index]
         productions_to_return[index] = ProbabilisticProduction(prod.lhs(), prod.rhs(),
                                                                **{'prob': probabilities[str(prod)]})
-    dist = FreqDist(probabilities)
-    dist.plot(len(probabilities))
+    dist = FreqDist(productions_to_return)
+    #dist.plot(len(probabilities))
 
-    return productions_to_return
+    return productions_to_return, dist
 
 
 def pcfg_learn1(treebank, n):
     productions = list()
     for i in range(n):
         for tree in treebank.parsed_sents()[:i+1]:
-            prod_gen = tree_to_productions(tree)
-            tree_to_append = next(prod_gen)
+            prod_gen = tree_to_productions(tree, "BOT")
+            tree_to_append = next(prod_gen)[0]
             while tree_to_append:
                 if tree_to_append.lhs() == Nonterminal('NP'):
                     productions.append(tree_to_append)
                 try:
-                    tree_to_append = next(prod_gen)
+                    tree_to_append = next(prod_gen)[0]
                 except Exception as e:
                     tree_to_append = False
-    productions = get_productions(productions)
-    return PCFG(Nonterminal('NP'), productions)
+    productions, dist = get_productions(productions)
+    return PCFG(Nonterminal('NP'), productions), dist
 
 
 def pcfg_learn2(treebank, n):
     productions = list()
     for i in range(n):
         for tree in treebank.parsed_sents()[:i+1]:
-            prod_gen = tree_to_productions(tree)
-            tree_to_append = next(prod_gen)
-            father_title = Nonterminal('BOT')
-            # todo i am taking the father title in the wrong way because i am not getting vp as father of np -
-            #  looked on the method and understood why very easily - need to maybe modify the method. i can yield the
-            #  parent's label as well and then little modifications will be required
+            prod_gen = tree_to_productions(tree, "BOT")
+            tree_to_append, father_title = next(prod_gen)
             while tree_to_append:
-                if tree_to_append.lhs() == Nonterminal('NP') and father_title == Nonterminal('S'):
+                if tree_to_append.lhs() == Nonterminal('NP') and father_title == 'S':
                     productions.append(tree_to_append)
                 try:
-                    father_title = tree_to_append.lhs()
-                    tree_to_append = next(prod_gen)
+                    tree_to_append, father_title = next(prod_gen)
                 except Exception as e:
                     tree_to_append = False
-    productions = get_productions(productions)
-    return PCFG(Nonterminal('NP'), productions)
+    productions, dist = get_productions(productions)
+    return PCFG(Nonterminal('NP'), productions), dist
 
 
 def pcfg_learn3(treebank, n):
     productions = list()
     for i in range(n):
         for tree in treebank.parsed_sents()[:i+1]:
-            prod_gen = tree_to_productions(tree)
-            tree_to_append = next(prod_gen)
-            father_title = Nonterminal('BOT')
+            prod_gen = tree_to_productions(tree, "BOT")
+            tree_to_append, father_title = next(prod_gen)
             while tree_to_append:
-                if tree_to_append.lhs() == Nonterminal('NP') and father_title == Nonterminal('VP'):
+                if tree_to_append.lhs() == Nonterminal('NP') and father_title == 'VP':
                     productions.append(tree_to_append)
                 try:
-                    father_title = tree_to_append.lhs()
-                    tree_to_append = next(prod_gen)
+                    tree_to_append, father_title = next(prod_gen)
                 except Exception as e:
                     tree_to_append = False
-    productions = get_productions(productions)
-    return PCFG(Nonterminal('NP'), productions)
+    productions, dist = get_productions(productions)
+    return PCFG(Nonterminal('NP'), productions), dist
 
 
-print(pcfg_learn3(treebank, 200))
+dist1 = pcfg_learn1(treebank, 200)[1]
+dist2 = pcfg_learn2(treebank, 200)[1]
+dist3 = pcfg_learn3(treebank, 200)[1]
+
+mle_1 = MLEProbDist(dist1)
+mle_2 = MLEProbDist(dist2)
+mle_3 = MLEProbDist(dist3)
+
+
+def compute_kl_divergence(mle_dist1, mle_dist2):
+    ans = 0
+    for p in mle_dist1.freqdist():
+        for q in mle_dist2.freqdist():
+            if p.rhs() == q.rhs():
+                ans += p.prob() * math.log(p.prob() / q.prob())
+    return ans
+
+
+print(compute_kl_divergence(mle_1, mle_2))
+print(compute_kl_divergence(mle_1, mle_3))
+print(compute_kl_divergence(mle_2, mle_3))
