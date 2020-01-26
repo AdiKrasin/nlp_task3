@@ -81,9 +81,36 @@ def pcfg_learn(treebank, n):
     return PCFG(Nonterminal('S'), productions)
 
 
-pcfg_training = pcfg_learn(treebank, 400)
+pcfg_training = pcfg_learn(treebank, 10)
 parser = ViterbiParser(pcfg_training)
 
-# this sentence is from the testing trees
-print(parser.parse_all('Pierre Vinken , 61 years old , will join the board as a nonexecutive director Nov. 29'
-                       ' .'.split()))
+
+parse_tree = parser.parse_all('Pierre Vinken , 61 years old , will join the board as a nonexecutive director Nov. 29'
+                              ' .'.split())
+
+
+def find_first_index(parse_tree):
+    if isinstance(parse_tree[0], Tree):
+        return find_first_index(parse_tree[0])
+    return parse_tree[0]
+
+
+def find_last_index(parse_tree):
+    if isinstance(parse_tree[-1], Tree):
+        return find_last_index(parse_tree[-1])
+    return parse_tree[-1][0]
+
+
+def get_list_of_labelled_constituents(parse_tree):
+    lst_to_return = list()
+    label = parse_tree.label()
+    first_index = find_first_index(parse_tree)
+    last_index = find_last_index(parse_tree)
+    lst_to_return.append((label, first_index, last_index))
+    for child in parse_tree:
+        if isinstance(child, Tree):
+            lst_to_return.append(get_list_of_labelled_constituents(child))
+    return lst_to_return
+
+
+print(get_list_of_labelled_constituents(parse_tree[0]))
