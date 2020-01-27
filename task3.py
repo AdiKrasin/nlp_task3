@@ -118,14 +118,13 @@ def get_test_dataset(treebank, n):
     return test_trees
 
 
-# todo need to fix this!! debug
 def turn_tree_into_sentence(tree):
     sentence = ""
     if isinstance(tree, Tree):
         for child in tree:
             sentence += turn_tree_into_sentence(child)
     else:
-        sentence += tree[0]
+        sentence += tree + ' '
     return sentence
 
 
