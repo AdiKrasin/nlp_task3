@@ -81,12 +81,8 @@ def pcfg_learn(treebank, n):
     return PCFG(Nonterminal('S'), productions)
 
 
-pcfg_training = pcfg_learn(treebank, 10)
-parser = ViterbiParser(pcfg_training)
-
-
-parse_tree = parser.parse_all('Pierre Vinken , 61 years old , will join the board as a nonexecutive director Nov. 29'
-                              ' .'.split())
+#pcfg_training = pcfg_learn(treebank, 400)
+#parser = ViterbiParser(pcfg_training)
 
 
 def find_first_index(parse_tree):
@@ -113,4 +109,31 @@ def get_list_of_labelled_constituents(parse_tree):
     return lst_to_return
 
 
-print(get_list_of_labelled_constituents(parse_tree[0]))
+def get_test_dataset(treebank, n):
+    test_trees = list()
+    for i in range(400, n+400):
+        for tree in treebank.parsed_sents()[:i+1]:
+            chomsky_normal_form(tree, factor='right', horzMarkov=1, vertMarkov=1, childChar='|', parentChar='^')
+            test_trees.append(tree)
+    return test_trees
+
+
+# todo need to fix this!! debug
+def turn_tree_into_sentence(tree):
+    sentence = ""
+    if isinstance(tree, Tree):
+        for child in tree:
+            sentence += turn_tree_into_sentence(child)
+    else:
+        sentence += tree[0]
+    return sentence
+
+
+# todo change to 200 instead of 1 when finish developing
+tree = get_test_dataset(treebank, 1)
+print(tree[0])
+print('\n')
+print(turn_tree_into_sentence(tree[0]))
+
+# todo need to get_list_of_labelled_constituents for the testing trees, then turn into sentences and parse and then
+#  get_list_of_labelled_constituents for the parsed trees and compare
