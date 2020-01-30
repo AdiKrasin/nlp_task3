@@ -85,9 +85,6 @@ def pcfg_learn(treebank, n):
 pcfg_training = pcfg_learn(treebank, 400)
 parser = ViterbiParser(pcfg_training)
 
-# todo delete this print:
-print('finished1')
-
 
 def get_list_of_labelled_constituents(parse_tree, lst=None, first_index=None, last_index=None):
     if lst is None:
@@ -128,33 +125,24 @@ def turn_tree_into_sentence(tree):
 
 
 trees = get_test_dataset(treebank, 50)
-# todo delete this print
-print('finished2')
 sentences = list()
 for tree in trees:
     sentences.append(turn_tree_into_sentence(tree))
     if len(sentences) == 50:
         break
-# todo delete this print and count
-print('finished3')
 count = 0
 gen_trees = list()
 for sentence in sentences:
     gen_tree = parser.parse_all(sentence.split())
-    # todo delete this print and count
-    count += 1
-    print('finished {} out of {}'.format(count, len(sentences)))
     if len(gen_tree):
         gen_trees.append(gen_tree[0])
-# todo delete this print
-print('finished4')
+
 list_of_labelled_constituents_for_trees = list()
 for tree in trees:
     list_of_labelled_constituents_for_trees.append(get_list_of_labelled_constituents(tree))
     if len(list_of_labelled_constituents_for_trees) == 50:
         break
-# todo delete this print
-print('finished5')
+
 list_of_labelled_constituents_for_gen_trees = list()
 for tree in gen_trees:
     list_of_labelled_constituents_for_gen_trees.append(get_list_of_labelled_constituents(tree))
@@ -172,9 +160,12 @@ def get_unlabelled_precision_and_recall(labelled_constituents1, labelled_constit
         number_of_total_constituents = len(labelled_constituent1)
         number_of_total_constituents2 = len(labelled_constituent2)
         for index2 in range(len(labelled_constituent1)):
-            if labelled_constituent1[index2][1] == labelled_constituent2[index2][1]:
-                if labelled_constituent1[index2][2] == labelled_constituent2[index2][1]:
-                    number_of_correct_constituents += 1
+            try:
+                if labelled_constituent1[index2][1] == labelled_constituent2[index2][1]:
+                    if labelled_constituent1[index2][2] == labelled_constituent2[index2][1]:
+                        number_of_correct_constituents += 1
+            except Exception as e:
+                continue
         precisions.append(number_of_correct_constituents / number_of_total_constituents)
         recalls.append(number_of_correct_constituents / number_of_total_constituents2)
     return [np.mean(precisions), np.mean(recalls),
@@ -191,8 +182,11 @@ def get_labelled_precision_and_recall(labelled_constituents1, labelled_constitue
         number_of_total_constituents = len(labelled_constituent1)
         number_of_total_constituents2 = len(labelled_constituent2)
         for index2 in range(len(labelled_constituent1)):
-            if labelled_constituent1[index2][0] == labelled_constituent2[index2][0]:
-                number_of_correct_constituents += 1
+            try:
+                if labelled_constituent1[index2][0] == labelled_constituent2[index2][0]:
+                    number_of_correct_constituents += 1
+            except Exception as e:
+                continue
         precisions.append(number_of_correct_constituents / number_of_total_constituents)
         recalls.append(number_of_correct_constituents / number_of_total_constituents2)
     return [np.mean(precisions), np.mean(recalls),
